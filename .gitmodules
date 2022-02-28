@@ -1,0 +1,3 @@
+[submodule "gleam-string-parser"]
+	path = gleam-string-parser
+	url = https://github.com/hayleigh-dot-dev/gleam-string-parser
