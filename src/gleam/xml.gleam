@@ -18,15 +18,18 @@ pub fn parse(input: String) -> Result(Document, Error) {
   parser.run(input, document_parser())
 }
 
+/// parse an xml document
 fn document_parser() -> Parser(Document) {
   node_parser()
   |> parser.map(fn(tree) { Document(tree) })
 }
 
+/// parse contents of an xml element
 fn tree_parser() -> Parser(Tree) {
   parser.one_of([node_parser(), text_parser()])
 }
 
+/// parse an xml element
 fn node_parser() -> Parser(Tree) {
   parser.succeed2(fn(tag, attrs) { debug("node", #(tag, attrs)) })
   |> drop(parser.whitespace())
@@ -45,6 +48,8 @@ fn node_parser() -> Parser(Tree) {
   })
 }
 
+/// parse an element's tag name
+/// `<strong`
 fn tag_parser() -> Parser(String) {
   parser.succeed(fn(a) { debug("tag", a) })
   |> drop(parser.string("<"))
@@ -52,16 +57,20 @@ fn tag_parser() -> Parser(String) {
   |> keep(keyword_parser())
 }
 
+/// parse a keyword like element name or an attribute
 fn keyword_parser() -> Parser(String) {
   parser.succeed2(fn(a, b) { debug("keyword", string.concat([a, b])) })
   |> keep(parser.take_if(is_alpha))
   |> keep(parser.take_while(is_alpha_or_digit))
 }
 
+/// parse zero or more attributes
 fn attrs_parser() -> Parser(List(#(String, String))) {
   parser.many(attr_parser(), parser.whitespace())
 }
 
+/// parse an attribute and its value
+/// `foo="bar"`
 fn attr_parser() -> Parser(#(String, String)) {
   parser.succeed2(fn(a, b) { debug("attr", #(a, b)) })
   |> keep(keyword_parser())
@@ -70,10 +79,13 @@ fn attr_parser() -> Parser(#(String, String)) {
   |> drop(parser.string("\""))
 }
 
+/// parse the rest of an element
 fn children_parser(tag: String) -> Parser(List(Tree)) {
   parser.one_of([some_children_parser(tag), none_children_parser()])
 }
 
+/// parse element contents and its closing tag
+/// `> (optional children) </tag>`
 fn some_children_parser(tag: String) -> Parser(List(Tree)) {
   parser.succeed(fn(a) { debug("some_children", a) })
   |> drop(parser.string(">"))
@@ -88,6 +100,8 @@ fn some_children_parser(tag: String) -> Parser(List(Tree)) {
   |> drop(parser.string(">"))
 }
 
+/// parse a self-closing tag
+/// `/>`
 fn none_children_parser() -> Parser(List(Tree)) {
   parser.succeed([])
   |> drop(parser.string("/"))
@@ -95,6 +109,7 @@ fn none_children_parser() -> Parser(List(Tree)) {
   |> drop(parser.string(">"))
 }
 
+/// parse text inside an element
 fn text_parser() -> Parser(Tree) {
   parser.take_while(fn(s) { s != "<" })
   |> parser.map(Text)
