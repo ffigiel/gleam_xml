@@ -31,27 +31,23 @@ fn tree_parser() -> Parser(Tree) {
 
 /// parse an xml element
 fn node_parser() -> Parser(Tree) {
-  parser.succeed2(fn(tag, attrs) { debug("node", #(tag, attrs)) })
+  parser.succeed2(fn(tag, attrs) { #(tag, attrs) })
   |> drop(parser.whitespace())
   |> keep(tag_parser())
   |> drop(parser.whitespace())
   |> keep(attrs_parser())
   |> drop(parser.whitespace())
   |> parser.then(fn(a) {
-    debug("then", a)
     let #(tag, attrs) = a
     children_parser(tag)
-    |> parser.map(fn(children) {
-      debug("children", children)
-      Node(tag, attrs, children)
-    })
+    |> parser.map(fn(children) { Node(tag, attrs, children) })
   })
 }
 
 /// parse an element's tag name
 /// `<strong`
 fn tag_parser() -> Parser(String) {
-  parser.succeed(fn(a) { debug("tag", a) })
+  parser.succeed(fn(a) { a })
   |> drop(parser.string("<"))
   |> drop(parser.whitespace())
   |> keep(keyword_parser())
@@ -59,7 +55,7 @@ fn tag_parser() -> Parser(String) {
 
 /// parse a keyword like element name or an attribute
 fn keyword_parser() -> Parser(String) {
-  parser.succeed2(fn(a, b) { debug("keyword", string.concat([a, b])) })
+  parser.succeed2(fn(a, b) { string.concat([a, b]) })
   |> keep(parser.take_if(is_alpha))
   |> keep(parser.take_while(is_alpha_or_digit))
 }
@@ -72,7 +68,7 @@ fn attrs_parser() -> Parser(List(#(String, String))) {
 /// parse an attribute and its value
 /// `foo="bar"`
 fn attr_parser() -> Parser(#(String, String)) {
-  parser.succeed2(fn(a, b) { debug("attr", #(a, b)) })
+  parser.succeed2(fn(a, b) { #(a, b) })
   |> keep(keyword_parser())
   |> drop(parser.string("=\""))
   |> keep(parser.take_while(fn(s) { s != "\"" }))
@@ -87,7 +83,7 @@ fn children_parser(tag: String) -> Parser(List(Tree)) {
 /// parse element contents and its closing tag
 /// `> (optional children) </tag>`
 fn some_children_parser(tag: String) -> Parser(List(Tree)) {
-  parser.succeed(fn(a) { debug("some_children", a) })
+  parser.succeed(fn(a) { a })
   |> drop(parser.string(">"))
   // FIXME parsing gets stuck around here
   |> keep(parser.many(tree_parser(), parser.whitespace()))
@@ -136,11 +132,3 @@ fn is_digit(s: String) -> Bool {
     _, _ -> True
   }
 }
-
-fn debug(label: String, value: a) -> a {
-  display(#(label, value))
-  value
-}
-
-external fn display(a: a) -> Nil =
-  "erlang" "display"
