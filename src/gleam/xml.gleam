@@ -111,7 +111,7 @@ fn none_children_parser() -> Parser(List(Tree)) {
 
 /// parse text inside an element
 fn text_parser() -> Parser(Tree) {
-  parser.take_while(fn(s) { s != "<" })
+  parser.take_if_and_while(fn(s) { s != "<" })
   |> parser.map(Text)
 }
 
