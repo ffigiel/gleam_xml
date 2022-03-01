@@ -6,16 +6,19 @@ pub fn main() {
   gleeunit.main()
 }
 
-fn basic_test() {
+pub fn empty_tag_test() {
   "<br/>"
   |> xml.parse
   |> should.equal(Ok(Document(root: Node("br", [], []))))
   "<  br  /  >"
   |> xml.parse
   |> should.equal(Ok(Document(root: Node("br", [], []))))
+  "<strong></strong>"
+  |> xml.parse
+  |> should.equal(Ok(Document(root: Node("strong", [], []))))
 }
 
-fn attrs_test() {
+pub fn attrs_test() {
   "<br foo=\"bar\"/>"
   |> xml.parse
   |> should.equal(Ok(Document(root: Node("br", [#("foo", "bar")], []))))
@@ -37,13 +40,23 @@ fn attrs_test() {
   ))))
 }
 
-pub fn closing_test() {
-  "<strong></strong>"
+pub fn children_test() {
+  "<p>email</p>"
   |> xml.parse
-  |> should.equal(Ok(Document(root: Node("strong", [], []))))
+  |> should.equal(Ok(Document(root: Node("p", [], [Text("email")]))))
+  "<p><input /></p>"
+  |> xml.parse
+  |> should.equal(Ok(Document(root: Node("p", [], [Node("input", [], [])]))))
+  "<p>email<input /></p>"
+  |> xml.parse
+  |> should.equal(Ok(Document(root: Node(
+    "p",
+    [],
+    [Text("email"), Node("input", [], [])],
+  ))))
 }
 
-fn note_test() {
+pub fn nested_test() {
   "<note>
 <to>Tove</to>
 <from>Jani</from>
