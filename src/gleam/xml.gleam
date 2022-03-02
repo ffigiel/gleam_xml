@@ -6,7 +6,7 @@ import gleam/order.{Gt, Lt}
 import gleam/io
 
 pub type Document {
-  Document(root: Tree)
+  Document(attrs: List(#(String, String)), root: Tree)
 }
 
 pub type Tree {
@@ -20,19 +20,38 @@ pub fn parse(input: String) -> Result(Document, Error) {
 
 /// parse an xml document
 fn document_parser() -> Parser(Document) {
-  node_parser()
-  |> parser.map(fn(tree) { Document(tree) })
+  parser.succeed2(Document)
+  |> keep(parser.one_of([xml_header_parser(), parser.succeed([])]))
+  |> drop(parser.whitespace())
+  |> keep(node_parser())
+  |> drop(parser.whitespace())
+}
+
+/// parse xml header into a list of attributes
+/// `<?xml version="1.0" encoding="UTF-8"?>`
+fn xml_header_parser() -> Parser(List(#(String, String))) {
+  parser.succeed(fn(a) { a })
+  |> drop(parser.string("<?xml"))
+  |> drop(parser.whitespace())
+  |> keep(attrs_parser())
+  |> drop(parser.whitespace())
+  |> drop(parser.string("?>"))
 }
 
 /// parse contents of an xml element
 fn tree_parser() -> Parser(Tree) {
-  parser.one_of([node_parser(), text_parser()])
+  parser.one_of([
+    parser.succeed(fn(a) { a })
+    |> drop(parser.whitespace())
+    |> keep(node_parser())
+    |> drop(parser.whitespace()),
+    text_parser(),
+  ])
 }
 
 /// parse an xml element
 fn node_parser() -> Parser(Tree) {
   parser.succeed2(fn(tag, attrs) { #(tag, attrs) })
-  |> drop(parser.whitespace())
   |> keep(tag_parser())
   |> drop(parser.whitespace())
   |> keep(attrs_parser())
@@ -40,7 +59,7 @@ fn node_parser() -> Parser(Tree) {
   |> parser.then(fn(a) {
     let #(tag, attrs) = a
     children_parser(tag)
-    |> parser.map(fn(children) { Node(tag, attrs, children) })
+    |> parser.map(Node(tag, attrs, _))
   })
 }
 
