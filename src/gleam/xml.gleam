@@ -27,10 +27,14 @@ fn document_parser() -> Parser(Document) {
   |> drop(parser.whitespace())
 }
 
+fn parser_chain() {
+  parser.succeed(fn(a) { a })
+}
+
 /// parse xml header into a list of attributes
 /// `<?xml version="1.0" encoding="UTF-8"?>`
 fn xml_header_parser() -> Parser(List(#(String, String))) {
-  parser.succeed(fn(a) { a })
+  parser_chain()
   |> drop(parser.string("<?xml"))
   |> drop(parser.whitespace())
   |> keep(attrs_parser())
@@ -41,7 +45,7 @@ fn xml_header_parser() -> Parser(List(#(String, String))) {
 /// parse contents of an xml element
 fn tree_parser() -> Parser(Tree) {
   parser.one_of([
-    parser.succeed(fn(a) { a })
+    parser_chain()
     |> drop(parser.whitespace())
     |> keep(node_parser())
     |> drop(parser.whitespace()),
@@ -66,7 +70,7 @@ fn node_parser() -> Parser(Tree) {
 /// parse an element's tag name
 /// `<strong`
 fn tag_parser() -> Parser(String) {
-  parser.succeed(fn(a) { a })
+  parser_chain()
   |> drop(parser.string("<"))
   |> drop(parser.whitespace())
   |> keep(keyword_parser())
@@ -102,7 +106,7 @@ fn children_parser(tag: String) -> Parser(List(Tree)) {
 /// parse element contents and its closing tag
 /// `> (optional children) </tag>`
 fn some_children_parser(tag: String) -> Parser(List(Tree)) {
-  parser.succeed(fn(a) { a })
+  parser_chain()
   |> drop(parser.string(">"))
   // FIXME parsing gets stuck around here
   |> keep(parser.many(tree_parser(), parser.whitespace()))
